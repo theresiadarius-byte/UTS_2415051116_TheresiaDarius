@@ -1,15 +1,11 @@
-// MODEL: Comment
-// Mewakili komentar pengguna di tabel Supabase `comments`.
-// Setiap komentar terkait dengan meal_id dan user_id (anonymous).
-//
-// Tahap ini hanya placeholder – implementasi lengkap ada di Tahap 6.
-
+/// Model Comment – satu komentar pengguna di tabel Supabase `comments`.
+/// RLS aktif: hanya pemilik (user_id sama) yang bisa edit/hapus komentarnya.
 class Comment {
-  final String id;
-  final String mealId;
-  final String userId;
-  final String authorName;
-  final String content;
+  final String id;         // uuid primary key
+  final String mealId;     // ID resep dari TheMealDB
+  final String userId;     // anonymous user id dari Supabase Auth
+  final String authorName; // nama yang diisi pengguna saat komentar
+  final String content;    // isi komentar
   final DateTime createdAt;
 
   const Comment({
@@ -24,22 +20,34 @@ class Comment {
   // Konversi dari Map Supabase ke objek Comment
   factory Comment.fromMap(Map<String, dynamic> map) {
     return Comment(
-      id: map['id'] as String,
-      mealId: map['meal_id'] as String,
-      userId: map['user_id'] as String,
+      id:         map['id']          as String,
+      mealId:     map['meal_id']     as String,
+      userId:     map['user_id']     as String,
       authorName: map['author_name'] as String,
-      content: map['content'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      content:    map['content']     as String,
+      createdAt:  DateTime.parse(map['created_at'] as String),
     );
   }
 
-  // Konversi dari objek Comment ke Map untuk dikirim ke Supabase
-  Map<String, dynamic> toMap() {
+  // Konversi ke Map untuk INSERT ke Supabase (tanpa id & created_at, diisi DB)
+  Map<String, dynamic> toInsertMap() {
     return {
-      'meal_id': mealId,
-      'user_id': userId,
+      'meal_id':     mealId,
+      'user_id':     userId,
       'author_name': authorName,
-      'content': content,
+      'content':     content,
     };
+  }
+
+  // Buat salinan Comment dengan field yang diubah (untuk UPDATE)
+  Comment copyWith({String? content, String? authorName}) {
+    return Comment(
+      id:         id,
+      mealId:     mealId,
+      userId:     userId,
+      authorName: authorName ?? this.authorName,
+      content:    content    ?? this.content,
+      createdAt:  createdAt,
+    );
   }
 }

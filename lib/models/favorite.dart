@@ -1,14 +1,12 @@
-// MODEL: Favorite
-// Mewakili resep yang disimpan pengguna di tabel Supabase `favorites`.
-//
-// Tahap ini hanya placeholder – implementasi lengkap ada di Tahap 6.
-
+/// Model Favorite – resep yang disimpan pengguna di tabel Supabase `favorites`.
+/// Menyimpan snapshot data resep (name, thumb) supaya bisa ditampilkan
+/// bahkan saat offline (tidak perlu panggil API lagi).
 class Favorite {
-  final String id;
-  final String userId;
-  final String mealId;
-  final String mealName;
-  final String mealThumb;
+  final String id;        // uuid primary key
+  final String userId;    // anonymous user id dari Supabase Auth
+  final String mealId;    // ID resep dari TheMealDB
+  final String mealName;  // snapshot nama resep
+  final String mealThumb; // snapshot URL thumbnail
   final DateTime createdAt;
 
   const Favorite({
@@ -23,21 +21,21 @@ class Favorite {
   // Konversi dari Map Supabase ke objek Favorite
   factory Favorite.fromMap(Map<String, dynamic> map) {
     return Favorite(
-      id: map['id'] as String,
-      userId: map['user_id'] as String,
-      mealId: map['meal_id'] as String,
-      mealName: map['meal_name'] as String,
+      id:        map['id']         as String,
+      userId:    map['user_id']    as String,
+      mealId:    map['meal_id']    as String,
+      mealName:  map['meal_name']  as String,
       mealThumb: map['meal_thumb'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
 
-  // Konversi ke Map untuk insert ke Supabase
-  Map<String, dynamic> toMap() {
+  // Konversi ke Map untuk INSERT ke Supabase
+  Map<String, dynamic> toInsertMap() {
     return {
-      'user_id': userId,
-      'meal_id': mealId,
-      'meal_name': mealName,
+      'user_id':    userId,
+      'meal_id':    mealId,
+      'meal_name':  mealName,
       'meal_thumb': mealThumb,
     };
   }
