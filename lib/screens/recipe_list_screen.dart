@@ -156,36 +156,50 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     );
   }
 
-  // Grid dengan lebar kolom tetap untuk Tahap 3
-  // Responsif menggunakan LayoutBuilder akan ditambahkan di Tahap 4
+  // Grid responsif: jumlah kolom berubah sesuai lebar layar
+  //   < 600px   → 2 kolom (ponsel)
+  //   600–900px → 3 kolom (tablet kecil)
+  //   > 900px   → 4 kolom (tablet besar / web)
   Widget _buildGrid(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,     // default 2 kolom – akan jadi responsif di Tahap 4
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.75,
-      ),
-      itemCount: _filteredMeals.length,
-      itemBuilder: (context, index) {
-        final meal = _filteredMeals[index];
-        return RecipeCard(
-          mealId:    meal['id']!,
-          mealName:  meal['name']!,
-          mealThumb: meal['thumb']!,
-          category:  meal['category'],
-          // Navigasi ke detail dengan passing data
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => RecipeDetailScreen(
-                mealId:    meal['id']!,
-                mealName:  meal['name']!,
-                mealThumb: meal['thumb']!,
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Hitung jumlah kolom berdasarkan lebar yang tersedia
+        final width = constraints.maxWidth;
+        final int columns = switch (width) {
+          > 900 => 4,
+          > 600 => 3,
+          _     => 2,
+        };
+
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount:   columns, // responsif berdasarkan LayoutBuilder
+            crossAxisSpacing: 14,
+            mainAxisSpacing:  14,
+            childAspectRatio: 0.75,
           ),
+          itemCount: _filteredMeals.length,
+          itemBuilder: (context, index) {
+            final meal = _filteredMeals[index];
+            return RecipeCard(
+              mealId:    meal['id']!,
+              mealName:  meal['name']!,
+              mealThumb: meal['thumb']!,
+              category:  meal['category'],
+              // Navigasi ke detail dengan passing data
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecipeDetailScreen(
+                    mealId:    meal['id']!,
+                    mealName:  meal['name']!,
+                    mealThumb: meal['thumb']!,
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );

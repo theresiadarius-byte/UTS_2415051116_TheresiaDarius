@@ -142,8 +142,11 @@ class HomeScreen extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 14),
                 itemBuilder: (context, i) {
                   final meal = _bestSellers[i];
+                  // Lebar kartu: 40% lebar layar, min 140, max 200
+                  final cardWidth = (MediaQuery.of(context).size.width * 0.4)
+                      .clamp(140.0, 200.0);
                   return SizedBox(
-                    width: 155,
+                    width: cardWidth,
                     // Reusable widget RecipeCard
                     child: RecipeCard(
                       mealId:    meal['id']!,
