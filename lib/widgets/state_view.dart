@@ -3,19 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
-/// Enum untuk memperjelas kondisi state tampilan
+/// Status tampilan untuk StateView.
 enum ViewStatus { loading, error, empty }
 
-/// StateView – widget reusable untuk 3 kondisi state:
-///   - loading : tampilkan CircularProgressIndicator
-///   - error   : tampilkan ikon error + pesan + tombol retry
-///   - empty   : tampilkan ikon kosong + pesan
+/// StateView – widget reusable untuk menampilkan loading, error, atau empty state.
 ///
-/// Dipakai di semua screen agar tampilannya konsisten.
+/// Dipakai di semua screen: HomeScreen, RecipeListScreen, RecipeDetailScreen,
+/// FavoriteScreen, dan seksi komentar di DetailScreen.
+///
+/// Setiap status tampil berbeda:
+///   loading → CircularProgressIndicator bergaya Sweet Bliss
+///   error   → ikon merah, pesan error ramah, tombol Retry (opsional)
+///   empty   → ikon abu, pesan kosong
 class StateView extends StatelessWidget {
   final ViewStatus status;
-  final String? message;      // pesan error atau kosong
-  final VoidCallback? onRetry; // aksi saat tombol "Try Again" ditekan
+  final String? message;      // pesan error atau empty (opsional)
+  final VoidCallback? onRetry; // tombol retry (hanya di status error)
 
   const StateView({
     super.key,
@@ -26,111 +29,131 @@ class StateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: switch (status) {
-          ViewStatus.loading => _buildLoading(),
-          ViewStatus.error   => _buildError(),
-          ViewStatus.empty   => _buildEmpty(),
-        },
+    return switch (status) {
+      ViewStatus.loading => _buildLoading(),
+      ViewStatus.error   => _buildError(),
+      ViewStatus.empty   => _buildEmpty(),
+    };
+  }
+
+  // ── Loading ───────────────────────────────────────────────────────────────
+  Widget _buildLoading() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(
+            color: AppTheme.primaryPink,
+            strokeWidth: 3,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Loading...',
+            style: TextStyle(
+              color: AppTheme.medBrown, fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-  Widget _buildLoading() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const CircularProgressIndicator(
-          color: AppTheme.primaryPink,
-          strokeWidth: 3,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Loading...',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: AppTheme.medBrown,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Error ──────────────────────────────────────────────────────────────────
+  // ── Error ─────────────────────────────────────────────────────────────────
   Widget _buildError() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
-          Icons.wifi_off_rounded,
-          size: 60,
-          color: AppTheme.lightPink,
-        ),
-        const SizedBox(height: 14),
-        Text(
-          'Oops, something went wrong',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.darkBrown,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        if (message != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            message!,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: AppTheme.medBrown,
+    // Bersihkan prefix "Exception: " yang mungkin ikut ke pesan
+    final cleanMsg = (message ?? 'Something went wrong')
+        .replaceAll('Exception: ', '')
+        .trim();
+
+    // Klasifikasikan jenis error untuk ikon yang tepat
+    final isNetwork = cleanMsg.toLowerCase().contains('internet') ||
+        cleanMsg.toLowerCase().contains('network') ||
+        cleanMsg.toLowerCase().contains('connection');
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Ikon error
+            Container(
+              width: 80, height: 80,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFEBEE),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                size: 40,
+                color: Colors.redAccent,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-        if (onRetry != null) ...[
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Try Again'),
-          ),
-        ],
-      ],
+            const SizedBox(height: 16),
+
+            // Judul error
+            Text(
+              isNetwork ? 'No Connection' : 'Oops!',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Pesan detail
+            Text(
+              cleanMsg,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 13, color: AppTheme.medBrown, height: 1.5,
+              ),
+            ),
+
+            // Tombol Retry
+            if (onRetry != null) ...[
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
-  // ── Empty ──────────────────────────────────────────────────────────────────
+  // ── Empty ─────────────────────────────────────────────────────────────────
   Widget _buildEmpty() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
-          Icons.cake_outlined,
-          size: 60,
-          color: AppTheme.lightPink,
+    final msg = message ?? 'Nothing here yet';
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80, height: 80,
+              decoration: const BoxDecoration(
+                color: AppTheme.palePink, shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.cake_outlined,
+                size: 40, color: AppTheme.primaryPink,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 13, color: AppTheme.medBrown, height: 1.5,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 14),
-        Text(
-          message ?? 'No recipes found',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.darkBrown,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Try searching for something else',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: AppTheme.medBrown,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
