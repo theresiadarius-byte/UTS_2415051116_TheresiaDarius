@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 import 'theme/app_theme.dart';
 
 // Entry point – muat .env sebelum runApp
@@ -22,9 +22,9 @@ class SweetBlissApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Sweet Bliss – Cake & Bakery Catalog',
-      // Gunakan tema Sweet Bliss dari AppTheme
       theme: AppTheme.theme,
-      home: const HomeScreen(),
+      // Gunakan MainScreen sebagai home – NavigationBar sudah ada di dalamnya
+      home: const MainScreen(),
     );
   }
 }
