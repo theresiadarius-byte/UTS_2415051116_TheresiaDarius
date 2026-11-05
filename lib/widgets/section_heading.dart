@@ -3,53 +3,73 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
-/// Heading seksi dengan subtitle kecil dan garis aksen pink.
-/// Digunakan berulang di HomeScreen untuk memisahkan antar-seksi.
+/// SectionHeading – judul seksi dengan subtitle kecil di atas.
+/// Responsive: teks tidak overflow di layar sempit.
 class SectionHeading extends StatelessWidget {
-  final String subtitle;  // teks kecil di atas (mis. "OUR SPECIALITY")
-  final String title;     // judul besar
+  final String subtitle;
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
 
   const SectionHeading({
     super.key,
     required this.subtitle,
     required this.title,
+    this.actionLabel,
+    this.onActionTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Label kecil di atas
-        Text(
-          subtitle,
-          style: GoogleFonts.poppins(
-            color: AppTheme.primaryPink,
-            fontSize: 10,
-            letterSpacing: 2.5,
-            fontWeight: FontWeight.w600,
+        // Judul (pakai Expanded agar tidak overflow ke kanan)
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  color: AppTheme.primaryPink,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.darkBrown,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 5),
-        // Judul dalam Playfair Display (serif)
-        Text(
-          title,
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.darkBrown,
+
+        // Tombol aksi opsional (mis. "See All")
+        if (actionLabel != null && onActionTap != null) ...[
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onActionTap,
+            child: Text(
+              actionLabel!,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppTheme.primaryPink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        // Garis aksen pink
-        Container(
-          width: 40,
-          height: 3,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryPink,
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
+        ],
       ],
     );
   }

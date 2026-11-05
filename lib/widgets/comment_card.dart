@@ -5,13 +5,13 @@ import '../models/comment.dart';
 import '../theme/app_theme.dart';
 
 /// CommentCard – kartu satu komentar.
-/// Menampilkan avatar inisial, nama penulis, tanggal, dan isi komentar.
-/// Jika [isOwner] true: tombol edit (Tahap 11) dan delete (Tahap 12) tampil.
+/// Semua teks dibatasi dengan maxLines+ellipsis agar tidak overflow
+/// di layar kecil maupun komentar yang sangat panjang.
 class CommentCard extends StatelessWidget {
   final Comment comment;
-  final bool isOwner;         // true jika komentar milik pengguna ini
-  final VoidCallback? onEdit;   // null di Tahap 9–10; diisi di Tahap 11
-  final VoidCallback? onDelete; // null di Tahap 9–11; diisi di Tahap 12
+  final bool isOwner;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const CommentCard({
     super.key,
@@ -44,7 +44,7 @@ class CommentCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar bulat dengan inisial nama
+              // Avatar bulat dengan inisial
               CircleAvatar(
                 radius: 18,
                 backgroundColor: AppTheme.lightPink,
@@ -61,8 +61,8 @@ class CommentCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
 
-              // Nama dan tanggal
-              Expanded(
+              // Nama dan tanggal – pakai Flexible agar tidak overflow
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -73,53 +73,50 @@ class CommentCard extends StatelessWidget {
                         fontSize: 13,
                         color: AppTheme.darkBrown,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       _formatDate(comment.createdAt),
                       style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: AppTheme.medBrown,
+                        fontSize: 11, color: AppTheme.medBrown,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Tombol edit & delete – hanya tampil jika pemilik
+              // Tombol edit & delete – hanya untuk pemilik
               if (isOwner) ...[
                 if (onEdit != null)
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     color: AppTheme.medBrown,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    tooltip: 'Edit',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    tooltip: 'Edit comment',
                     onPressed: onEdit,
                   ),
-                if (onDelete != null) ...[
-                  const SizedBox(width: 8),
+                if (onDelete != null)
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18),
                     color: Colors.redAccent,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    tooltip: 'Delete',
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    tooltip: 'Delete comment',
                     onPressed: onDelete,
                   ),
-                ],
               ],
             ],
           ),
 
           const SizedBox(height: 10),
 
-          // ── Isi komentar ─────────────────────────────────────────────
+          // ── Isi komentar (tidak dibatasi maxLines – boleh panjang) ───
           Text(
             comment.content,
             style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppTheme.darkBrown,
-              height: 1.5,
+              fontSize: 13, color: AppTheme.darkBrown, height: 1.5,
             ),
           ),
         ],
@@ -127,14 +124,13 @@ class CommentCard extends StatelessWidget {
     );
   }
 
-  /// Format tanggal: "5 Nov 2026 22:00"
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec',
     ];
-    final m = months[dt.month - 1];
-    final h = dt.hour.toString().padLeft(2, '0');
+    final m   = months[dt.month - 1];
+    final h   = dt.hour.toString().padLeft(2, '0');
     final min = dt.minute.toString().padLeft(2, '0');
     return '${dt.day} $m ${dt.year}  $h:$min';
   }

@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
-/// Kartu kategori untuk bagian "Explore Our Cakes" di HomeScreen.
-/// Menampilkan ikon dan nama kategori dalam kotak berwarna.
+/// CategoryCard – kartu kategori di HomeScreen.
+/// Lebar tetap, tinggi fleksibel, teks tidak overflow.
 class CategoryCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -24,33 +24,28 @@ class CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 125,
-        padding: const EdgeInsets.all(14),
+        width: 100,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryPink.withValues(alpha: 0.07),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppTheme.primaryPink, size: 36),
-            const SizedBox(height: 10),
+            Icon(icon, size: 32, color: AppTheme.primaryPink),
+            const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                color: AppTheme.darkBrown,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
-                height: 1.2,
+                color: AppTheme.darkBrown,
+                height: 1.3,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
