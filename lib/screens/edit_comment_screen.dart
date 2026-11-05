@@ -1,29 +1,8 @@
-// SCREEN: EditCommentScreen
-// Form untuk mengedit komentar yang sudah ada.
-// Hanya pemilik komentar (user_id sama) yang bisa mengedit.
-// Diisi otomatis dengan isi komentar lama.
+// Form edit komentar sudah diintegrasikan langsung ke RecipeDetailScreen
+// sebagai ModalBottomSheet (_CommentFormSheet dengan showNameField: false).
 //
-// Tahap ini hanya placeholder – implementasi lengkap ada di Tahap 11.
-
-import 'package:flutter/material.dart';
-
-class EditCommentScreen extends StatelessWidget {
-  final String commentId;
-  final String initialContent;
-
-  const EditCommentScreen({
-    super.key,
-    required this.commentId,
-    required this.initialContent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Edit Comment')),
-      body: Center(
-        child: Text('Edit comment $commentId – coming soon'),
-      ),
-    );
-  }
-}
+// Lihat: lib/screens/recipe_detail_screen.dart → _showEditCommentSheet()
+//
+// Alasan integrasi langsung:
+//   - Form butuh akses ke CommentProvider (sudah ada di context)
+//   - Lebih simpel dari screen terpisah
