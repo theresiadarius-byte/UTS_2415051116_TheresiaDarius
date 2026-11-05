@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/meal_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/recipe_card.dart';
+import '../widgets/state_view.dart';
 import 'recipe_detail_screen.dart';
 
-/// RecipeListScreen – menampilkan daftar resep dalam grid.
-/// Data dummy sementara; akan diganti data API nyata di Tahap 8.
-/// Grid responsif: 2 kolom di layar sempit, 4 kolom di layar lebar (Tahap 4).
+/// RecipeListScreen – daftar resep dalam grid responsif.
+/// Data dari MealProvider (TheMealDB API). Search memanggil provider.searchMeals().
+/// Grid responsif: 2 kolom ponsel, 3 tablet kecil, 4 tablet besar/web.
 class RecipeListScreen extends StatefulWidget {
   const RecipeListScreen({super.key});
 
@@ -16,77 +21,23 @@ class RecipeListScreen extends StatefulWidget {
 }
 
 class _RecipeListScreenState extends State<RecipeListScreen> {
-  // Controller untuk TextField pencarian
   final _searchController = TextEditingController();
-
-  // Query pencarian aktif
-  String _query = '';
-
-  // Data dummy resep – akan diganti response API di Tahap 8
-  static const _allMeals = <Map<String, String>>[
-    {
-      'id':    'dummy_1',
-      'name':  'Chocolate Gateau',
-      'thumb': 'https://www.themealdb.com/images/media/meals/tqrsvv1511555086.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_2',
-      'name':  'Victoria Sponge',
-      'thumb': 'https://www.themealdb.com/images/media/meals/wyrqqq1468233628.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_3',
-      'name':  'Carrot Cake',
-      'thumb': 'https://www.themealdb.com/images/media/meals/vrspxv1511722107.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_4',
-      'name':  'Bakewell Tart',
-      'thumb': 'https://www.themealdb.com/images/media/meals/vqpwrv1511723001.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_5',
-      'name':  'Banana Pancakes',
-      'thumb': 'https://www.themealdb.com/images/media/meals/sywswr1511383814.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_6',
-      'name':  'Christmas Pudding',
-      'thumb': 'https://www.themealdb.com/images/media/meals/vvusxs1483907034.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_7',
-      'name':  'Treacle Tart',
-      'thumb': 'https://www.themealdb.com/images/media/meals/qxuqtt1511724269.jpg',
-      'category': 'Dessert',
-    },
-    {
-      'id':    'dummy_8',
-      'name':  'Jam Roly-Poly',
-      'thumb': 'https://www.themealdb.com/images/media/meals/ysqupp1511796653.jpg',
-      'category': 'Dessert',
-    },
-  ];
-
-  // Filter daftar berdasarkan query pencarian
-  List<Map<String, String>> get _filteredMeals {
-    if (_query.isEmpty) return _allMeals;
-    return _allMeals
-        .where((m) =>
-            m['name']!.toLowerCase().contains(_query.toLowerCase()))
-        .toList();
-  }
+  Timer? _debounce; // timer untuk debounce pencarian (hindari API call tiap ketik)
 
   @override
   void dispose() {
-    _searchController.dispose(); // bebaskan memori saat widget dibuang
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  /// Dipanggil tiap kali teks search berubah.
+  /// Debounce 500ms agar tidak memanggil API setiap satu huruf.
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<MealProvider>().searchMeals(query);
+    });
   }
 
   @override
@@ -97,12 +48,11 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         title: Text(
           'Cake Recipes',
           style: GoogleFonts.playfairDisplay(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.darkBrown,
+            fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
           ),
         ),
         centerTitle: false,
+        automaticallyImplyLeading: false, // ini tab, bukan pushed screen
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,20 +62,17 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: TextField(
               controller: _searchController,
-              onChanged: (value) => setState(() => _query = value),
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Search cake recipes...',
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AppTheme.primaryPink,
-                ),
-                suffixIcon: _query.isNotEmpty
+                prefixIcon: const Icon(Icons.search, color: AppTheme.primaryPink),
+                suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, size: 18),
                         color: AppTheme.medBrown,
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _query = '');
+                          context.read<MealProvider>().searchMeals('');
                         },
                       )
                     : null,
@@ -133,39 +80,64 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             ),
           ),
 
-          // ── Info jumlah hasil ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Text(
-              '${_filteredMeals.length} recipes found',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: AppTheme.medBrown,
-              ),
-            ),
+          // ── Info jumlah + status ───────────────────────────────────────
+          Consumer<MealProvider>(
+            builder: (_, provider, __) {
+              final count = provider.meals.length;
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Text(
+                  provider.listStatus == ProviderStatus.loaded
+                      ? '$count recipe${count == 1 ? '' : 's'} found'
+                      : '',
+                  style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.medBrown),
+                ),
+              );
+            },
           ),
 
           // ── Grid resep ────────────────────────────────────────────────
           Expanded(
-            child: _filteredMeals.isEmpty
-                ? _buildEmptyState()
-                : _buildGrid(context),
+            child: Consumer<MealProvider>(
+              builder: (context, provider, _) {
+                return switch (provider.listStatus) {
+                  // Loading
+                  ProviderStatus.loading => const StateView(status: ViewStatus.loading),
+
+                  // Error
+                  ProviderStatus.error => StateView(
+                    status: ViewStatus.error,
+                    message: provider.listError,
+                    onRetry: () => provider.loadDesserts(),
+                  ),
+
+                  // Data tersedia
+                  ProviderStatus.loaded => provider.meals.isEmpty
+                      ? const StateView(
+                          status: ViewStatus.empty,
+                          message: 'No cake recipes found',
+                        )
+                      : _buildResponsiveGrid(context, provider),
+
+                  // Idle (belum pernah load) – biasanya singkat
+                  _ => const StateView(status: ViewStatus.loading),
+                };
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Grid responsif: jumlah kolom berubah sesuai lebar layar
-  //   < 600px   → 2 kolom (ponsel)
-  //   600–900px → 3 kolom (tablet kecil)
-  //   > 900px   → 4 kolom (tablet besar / web)
-  Widget _buildGrid(BuildContext context) {
+  /// Grid responsif dengan LayoutBuilder:
+  ///   < 600px   → 2 kolom (ponsel)
+  ///   600–900px → 3 kolom (tablet kecil)
+  ///   > 900px   → 4 kolom (tablet besar / web)
+  Widget _buildResponsiveGrid(BuildContext context, MealProvider provider) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Hitung jumlah kolom berdasarkan lebar yang tersedia
-        final width = constraints.maxWidth;
-        final int columns = switch (width) {
+        final int columns = switch (constraints.maxWidth) {
           > 900 => 4,
           > 600 => 3,
           _     => 2,
@@ -174,27 +146,26 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount:   columns, // responsif berdasarkan LayoutBuilder
+            crossAxisCount:   columns,
             crossAxisSpacing: 14,
             mainAxisSpacing:  14,
             childAspectRatio: 0.75,
           ),
-          itemCount: _filteredMeals.length,
+          itemCount: provider.meals.length,
           itemBuilder: (context, index) {
-            final meal = _filteredMeals[index];
+            final meal = provider.meals[index];
             return RecipeCard(
-              mealId:    meal['id']!,
-              mealName:  meal['name']!,
-              mealThumb: meal['thumb']!,
-              category:  meal['category'],
-              // Navigasi ke detail dengan passing data
+              mealId:    meal.id,
+              mealName:  meal.name,
+              mealThumb: meal.thumbnail,
+              category:  meal.category ?? 'Dessert',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => RecipeDetailScreen(
-                    mealId:    meal['id']!,
-                    mealName:  meal['name']!,
-                    mealThumb: meal['thumb']!,
+                    mealId:    meal.id,
+                    mealName:  meal.name,
+                    mealThumb: meal.thumbnail,
                   ),
                 ),
               ),
@@ -202,39 +173,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           },
         );
       },
-    );
-  }
-
-  // Tampilan saat tidak ada hasil pencarian
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.search_off_rounded,
-            size: 60,
-            color: AppTheme.lightPink,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No recipes found',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
-              color: AppTheme.darkBrown,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Try a different keyword',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppTheme.medBrown,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
