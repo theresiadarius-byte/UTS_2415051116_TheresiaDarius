@@ -44,14 +44,43 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   // ── Toggle favorit via FavoriteProvider ──────────────────────────────────
-  void _toggleFavorite(BuildContext context) {
-    final meal = context.read<MealProvider>().selectedMeal;
-    context.read<FavoriteProvider>().toggleFavorite(
+  Future<void> _toggleFavorite(BuildContext context) async {
+    final favProvider  = context.read<FavoriteProvider>();
+    final wasFavorite  = favProvider.isFavorite(widget.mealId);
+    final meal         = context.read<MealProvider>().selectedMeal;
+
+    await favProvider.toggleFavorite(
       userId:    SupabaseService.currentUserId,
       mealId:    widget.mealId,
-      mealName:  meal?.name  ?? widget.mealName,
+      mealName:  meal?.name      ?? widget.mealName,
       mealThumb: meal?.thumbnail ?? widget.mealThumb,
     );
+
+    if (!context.mounted) return;
+
+    // SnackBar konfirmasi
+    final hadError = favProvider.error != null;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+          SnackBar(
+            content: Text(
+              hadError
+                  ? 'Failed to update favorite. Check your connection.'
+                  : wasFavorite
+                      ? 'Removed from favorites'
+                      : '♥ Added to favorites!',
+            ),
+            backgroundColor: hadError
+                ? Colors.redAccent
+                : wasFavorite
+                    ? AppTheme.medBrown
+                    : AppTheme.primaryPink,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
   }
 
   // ── Tampilkan form tambah komentar (Tahap 10) ─────────────────────────────
