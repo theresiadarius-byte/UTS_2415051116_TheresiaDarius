@@ -20,7 +20,13 @@ Future<void> main() async {
   await dotenv.load(fileName: '.env');
 
   // 2. Inisialisasi Supabase + anonymous sign-in
-  await SupabaseService.initialize();
+  //    Dibungkus try-catch agar app tidak stuck jika terjadi error jaringan
+  try {
+    await SupabaseService.initialize();
+  } catch (e) {
+    debugPrint('[Supabase] Gagal inisialisasi: $e');
+    // App tetap berjalan; fitur komentar & favorit tidak akan bekerja
+  }
 
   runApp(const SweetBlissApp());
 }

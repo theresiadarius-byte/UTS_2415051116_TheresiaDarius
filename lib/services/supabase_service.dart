@@ -21,14 +21,14 @@ class SupabaseService {
   /// Inisialisasi Supabase dari .env dan login anonim.
   /// Dipanggil SEKALI di main() sebelum runApp().
   static Future<void> initialize() async {
-    final url     = dotenv.env['SUPABASE_URL']     ?? '';
-    final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    final url     = dotenv.env['SUPABASE_URL']  ?? '';
+    final anonKey = dotenv.env['SUPABASE_KEY']  ?? '';
 
     if (url.isEmpty || anonKey.isEmpty) {
       // Hentikan jika .env belum diisi – tampilkan pesan jelas
       throw Exception(
         '.env belum dikonfigurasi.\n'
-        'Salin .env.example → .env lalu isi SUPABASE_URL dan SUPABASE_ANON_KEY.',
+        'Salin .env.example → .env lalu isi SUPABASE_URL dan SUPABASE_KEY.',
       );
     }
 
