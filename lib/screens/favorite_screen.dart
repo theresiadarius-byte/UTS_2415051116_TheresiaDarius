@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/favorite_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/recipe_card.dart';
+import '../widgets/state_view.dart';
+import 'recipe_detail_screen.dart';
 
-/// FavoriteScreen – menampilkan resep favorit pengguna.
-/// Data favorit akan diambil dari Supabase di Tahap 9.
-/// Saat ini menampilkan placeholder yang menjelaskan fitur ini.
+/// FavoriteScreen – menampilkan resep yang difavoritkan pengguna.
+/// Data diambil dari tabel `favorites` Supabase via FavoriteProvider.
 class FavoriteScreen extends StatelessWidget {
   const FavoriteScreen({super.key});
 
@@ -17,65 +21,118 @@ class FavoriteScreen extends StatelessWidget {
         title: Text(
           'My Favorites',
           style: GoogleFonts.playfairDisplay(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.darkBrown,
+            fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
           ),
         ),
         centerTitle: false,
-        automaticallyImplyLeading: false, // tidak ada tombol back (ini tab)
+        automaticallyImplyLeading: false, // ini tab, bukan pushed screen
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Ikon favorit dekoratif
-              Container(
-                width: 100,
-                height: 100,
-                decoration: const BoxDecoration(
-                  color: AppTheme.palePink,
-                  shape: BoxShape.circle,
+      body: Consumer<FavoriteProvider>(
+        builder: (context, provider, _) {
+          // ── Loading ──────────────────────────────────────────────────
+          if (provider.isLoading) {
+            return const StateView(status: ViewStatus.loading);
+          }
+
+          // ── Error ────────────────────────────────────────────────────
+          if (provider.error != null) {
+            return StateView(
+              status: ViewStatus.error,
+              message: provider.error,
+            );
+          }
+
+          // ── Kosong ───────────────────────────────────────────────────
+          if (provider.favorites.isEmpty) {
+            return _buildEmptyState(context);
+          }
+
+          // ── Daftar favorit ───────────────────────────────────────────
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    '${provider.favorites.length} saved recipe${provider.favorites.length == 1 ? '' : 's'}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12, color: AppTheme.medBrown,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  size: 50,
-                  color: AppTheme.primaryPink,
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:   2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing:  14,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: provider.favorites.length,
+                    itemBuilder: (context, index) {
+                      final fav = provider.favorites[index];
+                      return RecipeCard(
+                        mealId:    fav.mealId,
+                        mealName:  fav.mealName,
+                        mealThumb: fav.mealThumb,
+                        category:  'Favorite',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RecipeDetailScreen(
+                              mealId:    fav.mealId,
+                              mealName:  fav.mealName,
+                              mealThumb: fav.mealThumb,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Tampilan saat belum ada favorit ──────────────────────────────────────
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 100, height: 100,
+              decoration: const BoxDecoration(
+                color: AppTheme.palePink, shape: BoxShape.circle,
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Your Favorites',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.darkBrown,
-                ),
+              child: const Icon(
+                Icons.favorite_rounded, size: 50, color: AppTheme.primaryPink,
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Save your favorite cake recipes here.\nThey will be stored in your personal collection.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: AppTheme.medBrown,
-                  height: 1.5,
-                ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No Favorites Yet',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
               ),
-              const SizedBox(height: 8),
-              Text(
-                '(Supabase integration coming in Stage 9)',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: AppTheme.medBrown,
-                  fontStyle: FontStyle.italic,
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Tap the ♥ button on any recipe\nto save it here.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 13, color: AppTheme.medBrown, height: 1.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

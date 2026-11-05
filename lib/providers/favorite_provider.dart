@@ -1,55 +1,106 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/favorite.dart';
+import '../repositories/favorite_repository.dart';
 
-/// FavoriteProvider – mengelola shared state favorit.
-/// Shared state artinya data ini diakses dari BANYAK screen sekaligus:
-///   - RecipeDetailScreen (tombol ♥ add/remove favorit)
-///   - FavoriteScreen (daftar semua favorit)
-///   - RecipeCard (ikon ♥ di kartu)
+/// FavoriteProvider – state management favorit.
+/// Shared state → dipakai di banyak screen (Detail, FavoriteScreen, RecipeCard).
+/// Alur: Screen -> Provider (file ini) -> FavoriteRepository -> Supabase
 ///
-/// Karena dipakai di banyak tempat, WAJIB pakai Provider (bukan setState lokal).
-/// Alur: Screen -> Provider (file ini) -> FavoriteRepository -> SupabaseService
-///
-/// Implementasi penuh di Tahap 9–12.
+/// _favoriteMealIds  – Set<String> untuk isFavorite() O(1)
+/// _favoriteIdMap    – Map mealId→favoriteId untuk delete tanpa search
 class FavoriteProvider extends ChangeNotifier {
-  // ignore: prefer_final_fields
+  final FavoriteRepository _repository;
+
+  FavoriteProvider(this._repository);
+
   List<Favorite> _favorites = [];
-  // ignore: prefer_final_fields
   bool _isLoading = false;
   String? _error;
 
-  // Set meal ID yang difavoritkan – O(1) lookup saat cek isFavorite
+  // Lookup cepat O(1)
   final Set<String> _favoriteMealIds = {};
+  final Map<String, String> _favoriteIdMap = {}; // mealId → favoriteId
 
   // Getters
   List<Favorite> get favorites => _favorites;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Cek apakah sebuah resep sudah difavoritkan oleh pengguna ini
+  /// Cek apakah resep sudah difavoritkan oleh pengguna ini
   bool isFavorite(String mealId) => _favoriteMealIds.contains(mealId);
 
-  // ── Methods – implementasi penuh di Tahap 9–12 ───────────────────────────
+  // ── READ (Tahap 9) ────────────────────────────────────────────────────────
 
-  /// Load semua favorit milik pengguna dari Supabase
+  /// Load semua favorit milik pengguna.
+  /// Dipanggil saat Provider dibuat di main.dart.
   Future<void> loadFavorites(String userId) async {
-    // Implementasi di Tahap 9
+    if (userId.isEmpty) return; // belum login
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _favorites = await _repository.getFavorites(userId);
+
+      // Rebuild Set & Map untuk lookup cepat
+      _favoriteMealIds.clear();
+      _favoriteIdMap.clear();
+      for (final fav in _favorites) {
+        _favoriteMealIds.add(fav.mealId);
+        _favoriteIdMap[fav.mealId] = fav.id;
+      }
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+    }
+
     notifyListeners();
   }
 
-  /// Tambah resep ke favorit
-  Future<void> addFavorite({
+  // ── TOGGLE (Tahap 9) ──────────────────────────────────────────────────────
+
+  /// Toggle favorit: jika sudah favorit → hapus, jika belum → tambah.
+  /// Menyimpan snapshot mealName & mealThumb agar FavoriteScreen
+  /// bisa tampil bahkan saat offline.
+  Future<void> toggleFavorite({
     required String userId,
     required String mealId,
     required String mealName,
     required String mealThumb,
   }) async {
-    // Implementasi di Tahap 10
-  }
+    _error = null;
 
-  /// Hapus resep dari favorit
-  Future<void> removeFavorite(String favoriteId, String mealId) async {
-    // Implementasi di Tahap 12
+    if (isFavorite(mealId)) {
+      // ── HAPUS FAVORIT ────────────────────────────────────────────────────
+      final favId = _favoriteIdMap[mealId]!;
+      try {
+        await _repository.removeFavorite(favId);
+        _favorites.removeWhere((f) => f.mealId == mealId);
+        _favoriteMealIds.remove(mealId);
+        _favoriteIdMap.remove(mealId);
+      } catch (e) {
+        _error = e.toString().replaceAll('Exception: ', '');
+      }
+    } else {
+      // ── TAMBAH FAVORIT ───────────────────────────────────────────────────
+      try {
+        final fav = await _repository.addFavorite(
+          userId:    userId,
+          mealId:    mealId,
+          mealName:  mealName,
+          mealThumb: mealThumb,
+        );
+        _favorites.insert(0, fav);
+        _favoriteMealIds.add(mealId);
+        _favoriteIdMap[mealId] = fav.id;
+      } catch (e) {
+        _error = e.toString().replaceAll('Exception: ', '');
+      }
+    }
+
+    notifyListeners();
   }
 }

@@ -5,16 +5,22 @@ import 'package:provider/provider.dart';
 import 'providers/comment_provider.dart';
 import 'providers/favorite_provider.dart';
 import 'providers/meal_provider.dart';
+import 'repositories/comment_repository.dart';
+import 'repositories/favorite_repository.dart';
 import 'repositories/meal_repository.dart';
 import 'screens/main_screen.dart';
 import 'services/meal_api_service.dart';
+import 'services/supabase_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Muat file .env (berisi SUPABASE_URL dan SUPABASE_KEY)
+  // 1. Muat variabel dari file .env
   await dotenv.load(fileName: '.env');
+
+  // 2. Inisialisasi Supabase + anonymous sign-in
+  await SupabaseService.initialize();
 
   runApp(const SweetBlissApp());
 }
@@ -25,21 +31,24 @@ class SweetBlissApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      // Daftarkan semua provider di sini – tersedia di seluruh widget tree
       providers: [
+        // MealProvider: load semua dessert langsung saat dibuat
         ChangeNotifierProvider(
-          // Buat MealProvider dengan dependency injection:
-          // MealProvider ← MealRepository ← MealApiService
-          // Langsung panggil loadDesserts() supaya data siap saat screen terbuka
           create: (_) => MealProvider(
             MealRepository(MealApiService()),
           )..loadDesserts(),
         ),
+
+        // CommentProvider: inject CommentRepository
+        // loadComments() dipanggil dari RecipeDetailScreen.initState()
         ChangeNotifierProvider(
-          create: (_) => CommentProvider(),
+          create: (_) => CommentProvider(CommentRepository()),
         ),
+
+        // FavoriteProvider: inject FavoriteRepository + load langsung
         ChangeNotifierProvider(
-          create: (_) => FavoriteProvider(),
+          create: (_) => FavoriteProvider(FavoriteRepository())
+            ..loadFavorites(SupabaseService.currentUserId),
         ),
       ],
       child: MaterialApp(
