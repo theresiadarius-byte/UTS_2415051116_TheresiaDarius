@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Environment variables – JANGAN commit file ini ke repo!
+# Gunakan .env.example sebagai template
+.env
