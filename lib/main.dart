@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'screens/home_screen.dart';
+import 'theme/app_theme.dart';
 
-// Entry point aplikasi – inisialisasi .env sebelum runApp
+// Entry point – muat .env sebelum runApp
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -21,11 +22,8 @@ class SweetBlissApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Sweet Bliss – Cake & Bakery Catalog',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFFFFAF7),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC2185B)),
-      ),
+      // Gunakan tema Sweet Bliss dari AppTheme
+      theme: AppTheme.theme,
       home: const HomeScreen(),
     );
   }
