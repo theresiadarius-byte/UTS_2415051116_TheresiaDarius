@@ -8,7 +8,9 @@ import '../providers/comment_provider.dart';
 import '../providers/favorite_provider.dart';
 import '../providers/meal_provider.dart';
 import '../services/supabase_service.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/recipe_translator.dart';
 import '../widgets/comment_card.dart';
 import '../widgets/state_view.dart';
 
@@ -66,10 +68,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           SnackBar(
             content: Text(
               hadError
-                  ? 'Failed to update favorite. Check your connection.'
+                  ? 'Gagal memperbarui favorit. Periksa koneksi internet.'
                   : wasFavorite
-                      ? 'Removed from favorites'
-                      : '♥ Added to favorites!',
+                      ? 'Dihapus dari favorit'
+                      : '♥ Ditambahkan ke favorit!',
             ),
             backgroundColor: hadError
                 ? Colors.redAccent
@@ -90,7 +92,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       isScrollControlled: true,  // supaya keyboard tidak menutupi form
       backgroundColor: Colors.transparent,
       builder: (_) => _CommentFormSheet(
-        title: 'Add Comment',
+        title: 'Tambah Komentar',
         onSubmit: (name, content) async {
           final ok = await context.read<CommentProvider>().addComment(
             authorName: name,
@@ -100,7 +102,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(ok ? 'Comment added!' : 'Failed to add comment'),
+                content: Text(ok ? 'Komentar berhasil ditambahkan!' : 'Gagal menambahkan komentar'),
                 backgroundColor: ok ? AppTheme.primaryPink : Colors.redAccent,
               ),
             );
@@ -117,7 +119,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CommentFormSheet(
-        title:          'Edit Comment',
+        title:          'Edit Komentar',
         initialContent: current,   // isi sebelumnya di-prefill
         showNameField:  false,     // nama tidak bisa diubah saat edit
         onSubmit: (_, content) async {
@@ -129,7 +131,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(ok ? 'Comment updated!' : 'Failed to update'),
+                content: Text(ok ? 'Komentar berhasil diperbarui!' : 'Gagal memperbarui komentar'),
                 backgroundColor: ok ? AppTheme.primaryPink : Colors.redAccent,
               ),
             );
@@ -146,19 +148,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Delete Comment?',
+          'Hapus Komentar?',
           style: GoogleFonts.playfairDisplay(
             fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
           ),
         ),
         content: Text(
-          'This action cannot be undone.',
+          'Tindakan ini tidak dapat dibatalkan.',
           style: GoogleFonts.poppins(fontSize: 13, color: AppTheme.medBrown),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
+            child: Text('Batal',
                 style: GoogleFonts.poppins(color: AppTheme.medBrown)),
           ),
           ElevatedButton(
@@ -170,13 +172,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(ok ? 'Comment deleted' : 'Failed to delete'),
+                    content: Text(ok ? 'Komentar berhasil dihapus' : 'Gagal menghapus komentar'),
                     backgroundColor: ok ? AppTheme.darkBrown : Colors.redAccent,
                   ),
                 );
               }
             },
-            child: Text('Delete',
+            child: Text('Hapus',
                 style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
@@ -212,7 +214,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           isFav ? Icons.favorite_rounded : Icons.favorite_outline,
                         ),
                         color: isFav ? Colors.pinkAccent[100] : Colors.white,
-                        tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+                        tooltip: isFav ? 'Hapus dari favorit' : 'Tambah ke favorit',
                         onPressed: () => _toggleFavorite(context),
                       );
                     },
@@ -291,7 +293,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             backgroundColor: AppTheme.primaryPink,
             icon: const Icon(Icons.add_comment_outlined, color: Colors.white),
             label: Text(
-              'Add Comment',
+              'Tambah Komentar',
               style: GoogleFonts.poppins(
                 color: Colors.white, fontWeight: FontWeight.w600,
               ),
@@ -320,9 +322,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           Wrap(
             spacing: 8, runSpacing: 6,
             children: [
-              if (meal.category != null) _Chip(label: meal.category!),
-              if (meal.area     != null) _Chip(label: '🌍 ${meal.area!}'),
-              if (meal.tags     != null && meal.tags!.isNotEmpty)
+              if (meal.category != null)
+                _Chip(label: RecipeTranslator.translateCategory(meal.category)),
+              if (meal.area != null)
+                _Chip(label: '🌍 ${RecipeTranslator.translateArea(meal.area)}'),
+              if (meal.tags != null && meal.tags!.isNotEmpty)
                 ...meal.tags!.split(',').take(3).map((t) => _Chip(label: t.trim())),
             ],
           ),
@@ -330,10 +334,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           const SizedBox(height: 28),
 
           // ── Bahan ────────────────────────────────────────────────────
-          const _SectionTitle(title: 'Ingredients'),
+          const _SectionTitle(title: 'Bahan-Bahan'),
           const SizedBox(height: 12),
           meal.ingredients.isEmpty
-              ? _placeholder('No ingredients available')
+              ? _placeholder('Bahan-bahan tidak tersedia')
               : Column(
                   children: meal.ingredients
                       .map((ing) => _IngredientRow(ingredient: ing))
@@ -343,16 +347,43 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           const SizedBox(height: 28),
 
           // ── Instruksi ────────────────────────────────────────────────
-          const _SectionTitle(title: 'Instructions'),
+          Row(
+            children: [
+              const _SectionTitle(title: 'Langkah Pembuatan'),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.palePink,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.translate_rounded, size: 12, color: AppTheme.primaryPink),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Bahasa Indonesia',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryPink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           meal.instructions == null
-              ? _placeholder('No instructions available')
+              ? _placeholder('Langkah pembuatan tidak tersedia')
               : _buildInstructions(meal.instructions!),
 
           const SizedBox(height: 28),
 
           // ── Komentar ─────────────────────────────────────────────────
-          const _SectionTitle(title: 'Comments'),
+          const _SectionTitle(title: 'Komentar Pengguna'),
           const SizedBox(height: 12),
           _buildComments(context),
         ],
@@ -382,7 +413,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         if (provider.comments.isEmpty) {
           return const StateView(
             status: ViewStatus.empty,
-            message: 'No comments yet\nTap + to be the first!',
+            message: 'Belum ada komentar\nKetuk + untuk jadi yang pertama!',
           );
         }
 
@@ -412,10 +443,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   // ── Helper widgets ────────────────────────────────────────────────────────
   Widget _buildInstructions(String raw) {
-    final steps = raw
-        .split(RegExp(r'\r?\n(\r?\n)+'))
+    // Bersihkan karakter return (\r) yang menyebabkan simbol kotak ▢
+    final cleaned = raw
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
+
+    final steps = cleaned
+        .split(RegExp(r'\n+'))
         .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
+        .where((s) => s.isNotEmpty && s != '▢' && s != 'STEP')
         .toList();
 
     return Column(
@@ -441,11 +477,18 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ),
               Expanded(
-                child: Text(
-                  entry.value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13, color: AppTheme.darkBrown, height: 1.55,
-                  ),
+                child: FutureBuilder<String>(
+                  future: TranslationService.toIndonesian(entry.value),
+                  initialData: entry.value,
+                  builder: (context, snapshot) {
+                    final text = snapshot.data ?? entry.value;
+                    return Text(
+                      text,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13, color: AppTheme.darkBrown, height: 1.55,
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -567,12 +610,12 @@ class _CommentFormSheetState extends State<_CommentFormSheet> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  hintText: 'Your name',
+                  hintText: 'Nama Anda',
                   prefixIcon: Icon(Icons.person_outline, color: AppTheme.primaryPink),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Name cannot be empty';
+                  if (v == null || v.trim().isEmpty) return 'Nama tidak boleh kosong';
                   return null;
                 },
               ),
@@ -583,14 +626,14 @@ class _CommentFormSheetState extends State<_CommentFormSheet> {
             TextFormField(
               controller: _contentCtrl,
               decoration: const InputDecoration(
-                hintText: 'Write your comment...',
+                hintText: 'Tulis komentar Anda...',
                 prefixIcon: Icon(Icons.comment_outlined, color: AppTheme.primaryPink),
               ),
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Comment cannot be empty';
-                if (v.trim().length < 5) return 'Comment must be at least 5 characters';
+                if (v == null || v.trim().isEmpty) return 'Komentar tidak boleh kosong';
+                if (v.trim().length < 5) return 'Komentar minimal 5 karakter';
                 return null;
               },
             ),
@@ -661,6 +704,9 @@ class _IngredientRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translatedName = RecipeTranslator.translateIngredient(ingredient.name as String);
+    final translatedMeasure = RecipeTranslator.translateMeasure(ingredient.measure as String);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -669,12 +715,12 @@ class _IngredientRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              ingredient.name as String,
+              translatedName,
               style: GoogleFonts.poppins(fontSize: 13, color: AppTheme.darkBrown),
             ),
           ),
           Text(
-            ingredient.measure as String,
+            translatedMeasure,
             style: GoogleFonts.poppins(
               fontSize: 12, color: AppTheme.medBrown, fontWeight: FontWeight.w500,
             ),

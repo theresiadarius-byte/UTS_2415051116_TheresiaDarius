@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'favorite_screen.dart';
 import 'home_screen.dart';
+import 'profile_screen.dart';
 import 'recipe_list_screen.dart';
 
 /// MainScreen – shell utama yang menampung NavigationBar.
@@ -25,49 +26,64 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     RecipeListScreen(),
     FavoriteScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // IndexedStack: tampilkan hanya satu screen, sisanya tetap hidup di memori
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+        }
+      },
+      child: Scaffold(
+        // IndexedStack: tampilkan hanya satu screen, sisanya tetap hidup di memori
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _screens,
+        ),
 
-      // NavigationBar bawah dengan 3 destinasi
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: _tabLabel(0),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            selectedIcon: const Icon(Icons.search_rounded),
-            label: _tabLabel(1),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.favorite_outline),
-            selectedIcon: const Icon(Icons.favorite_rounded),
-            label: _tabLabel(2),
-          ),
-        ],
+        // NavigationBar bawah dengan 4 destinasi (Beranda, Resep, Favorit, Profil)
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: _tabLabel(0),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.search_outlined),
+              selectedIcon: const Icon(Icons.search_rounded),
+              label: _tabLabel(1),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.favorite_outline),
+              selectedIcon: const Icon(Icons.favorite_rounded),
+              label: _tabLabel(2),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: _tabLabel(3),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // Label tab sesuai index
+  // Label tab sesuai index dalam Bahasa Indonesia
   String _tabLabel(int index) => switch (index) {
-        0 => 'Home',
-        1 => 'Recipes',
-        2 => 'Favorites',
+        0 => 'Beranda',
+        1 => 'Resep',
+        2 => 'Favorit',
+        3 => 'Profil',
         _ => '',
       };
 }

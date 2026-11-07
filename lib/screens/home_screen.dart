@@ -8,6 +8,7 @@ import '../widgets/category_card.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/section_heading.dart';
 import '../widgets/state_view.dart';
+import 'favorite_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'recipe_list_screen.dart';
 
@@ -18,10 +19,34 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   static const _categories = <Map<String, Object>>[
-    {'title': 'Birthday\nCakes', 'icon': Icons.cake_outlined,       'color': Color(0xFFF8DDE2)},
-    {'title': 'Anniversary',    'icon': Icons.favorite_border,      'color': Color(0xFFF5E4E5)},
-    {'title': 'Theme\nCakes',   'icon': Icons.celebration_outlined,  'color': Color(0xFFECE3F5)},
-    {'title': 'Cupcakes',       'icon': Icons.bakery_dining_outlined,'color': Color(0xFFF8EBD9)},
+    {
+      'key': 'cakes',
+      'title': 'Aneka\nCake & Bolu',
+      'label': 'Aneka Cake & Bolu',
+      'icon': Icons.cake_outlined,
+      'color': Color(0xFFF8DDE2),
+    },
+    {
+      'key': 'tarts',
+      'title': 'Pai &\nTart Manis',
+      'label': 'Pai & Tart Manis',
+      'icon': Icons.pie_chart_outline_rounded,
+      'color': Color(0xFFF5E4E5),
+    },
+    {
+      'key': 'puddings',
+      'title': 'Puding &\nMousse',
+      'label': 'Puding & Mousse',
+      'icon': Icons.icecream_outlined,
+      'color': Color(0xFFECE3F5),
+    },
+    {
+      'key': 'cookies',
+      'title': 'Kukis &\nRoti Manis',
+      'label': 'Kukis & Roti Manis',
+      'icon': Icons.cookie_outlined,
+      'color': Color(0xFFF8EBD9),
+    },
   ];
 
   @override
@@ -32,13 +57,18 @@ class HomeScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             const SizedBox(height: 20),
             _SearchBar(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RecipeListScreen()),
-              ),
+              onTap: () {
+                context.read<MealProvider>().filterByCategory('all');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RecipeListScreen(showBackButton: true),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             const _HeroBanner(),
@@ -47,7 +77,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
 
             // ── Kategori ─────────────────────────────────────────────────
-            const SectionHeading(subtitle: 'OUR SPECIALITY', title: 'Explore Our Cakes'),
+            const SectionHeading(subtitle: 'SPESIALIS KAMI', title: 'Kategori Kue Pilihan'),
             const SizedBox(height: 16),
             SizedBox(
               height: 128,
@@ -61,10 +91,20 @@ class HomeScreen extends StatelessWidget {
                     title: cat['title'] as String,
                     icon:  cat['icon']  as IconData,
                     color: cat['color'] as Color,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RecipeListScreen()),
-                    ),
+                    onTap: () {
+                      final categoryKey = cat['key'] as String;
+                      final categoryLabel = cat['label'] as String;
+                      context.read<MealProvider>().filterByCategory(categoryKey);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RecipeListScreen(
+                            showBackButton: true,
+                            categoryTitle: categoryLabel,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -73,7 +113,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
 
             // ── Best Sellers – dari MealProvider ─────────────────────────
-            const SectionHeading(subtitle: 'MOST LOVED', title: 'Our Best Sellers'),
+            const SectionHeading(subtitle: 'PALING DISUKAI', title: 'Resep Terpopuler'),
             const SizedBox(height: 16),
 
             // Consumer mendengarkan perubahan MealProvider
@@ -107,7 +147,7 @@ class HomeScreen extends StatelessWidget {
                     child: provider.featuredMeals.isEmpty
                         ? const StateView(
                             status: ViewStatus.empty,
-                            message: 'No featured recipes yet',
+                            message: 'Belum ada resep pilihan',
                           )
                         : ListView.separated(
                             scrollDirection: Axis.horizontal,
@@ -151,7 +191,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Center(
               child: Text(
-                'Sweet Bliss  •  Baked With Love ♥',
+                'Sweet Bliss  •  Dibuat dengan Sepenuh Hati ♥',
                 style: GoogleFonts.poppins(
                   color: AppTheme.medBrown.withValues(alpha: 0.6),
                   fontSize: 11,
@@ -165,7 +205,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Container(
@@ -188,13 +228,19 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'CAKES  •  BAKES  •  HAPPINESS',
+              'KUE  •  ROTI  •  KEBAHAGIAAN',
               style: GoogleFonts.poppins(fontSize: 8, letterSpacing: 1.2, color: AppTheme.medBrown),
             ),
           ],
         ),
         const Spacer(),
-        const Icon(Icons.favorite_border, color: AppTheme.darkBrown),
+        IconButton(
+          icon: const Icon(Icons.favorite_border, color: AppTheme.darkBrown),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FavoriteScreen(showBackButton: true)),
+          ),
+        ),
       ],
     );
   }
@@ -212,15 +258,15 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('CUSTOM CAKES',
+                Text('PESANAN KHUSUS',
                     style: GoogleFonts.poppins(
                         color: AppTheme.lightPink, fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                Text('Made Specially\nFor Your Moments',
+                Text('Dibuat Khusus\nUntuk Momen Anda',
                     style: GoogleFonts.playfairDisplay(
                         color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('A little sweetness for every celebration.',
+                Text('Sedikit manis untuk setiap perayaan berharga.',
                     style: GoogleFonts.poppins(color: const Color(0xFFE9D8D1), fontSize: 11)),
               ],
             ),
@@ -239,7 +285,7 @@ class _HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 220,
+      constraints: const BoxConstraints(minHeight: 220),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(colors: [Color(0xFFF4DADD), Color(0xFFFFEEE7)]),
@@ -251,37 +297,43 @@ class _HeroBanner extends StatelessWidget {
             right: -15, bottom: -8,
             child: Icon(Icons.cake_rounded, size: 180, color: Color(0x33C2185B)),
           ),
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('FRESHLY BAKED  •  MADE WITH LOVE',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('SEGAR DARI OVEN  •  DIBUAT DENGAN CINTA',
+                    style: GoogleFonts.poppins(
+                        fontSize: 9, letterSpacing: 1, color: const Color(0xFF8D505C), fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Text('Hidup Lebih Manis\ndengan Kue',
+                    style: GoogleFonts.playfairDisplay(
+                        fontSize: 26, height: 1.2, fontWeight: FontWeight.bold, color: AppTheme.darkBrown)),
+                const SizedBox(height: 8),
+                Text('Setiap momen manis layak dirayakan\ndengan kelezatan penuh cinta.',
+                    style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF775B54))),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
+                    context.read<MealProvider>().filterByCategory('all');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RecipeListScreen(showBackButton: true),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                        color: AppTheme.primaryPink, borderRadius: BorderRadius.circular(25)),
+                    child: Text('Jelajahi Aneka Kue  →',
                         style: GoogleFonts.poppins(
-                            fontSize: 9, letterSpacing: 1, color: const Color(0xFF8D505C), fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 10),
-                    Text('Life is Better\nwith Cake',
-                        style: GoogleFonts.playfairDisplay(
-                            fontSize: 28, height: 1.2, fontWeight: FontWeight.bold, color: AppTheme.darkBrown)),
-                    const SizedBox(height: 10),
-                    Text('Every sweet moment deserves\na delicious little celebration.',
-                        style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF775B54))),
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                      decoration: BoxDecoration(
-                          color: AppTheme.primaryPink, borderRadius: BorderRadius.circular(25)),
-                      child: Text('Explore Our Cakes  →',
-                          style: GoogleFonts.poppins(
-                              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                    ),
-                  ],
+                            color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -298,9 +350,9 @@ class _BenefitBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        Expanded(child: _BenefitItem(icon: Icons.eco_outlined,       title: 'Premium\nIngredients')),
-        Expanded(child: _BenefitItem(icon: Icons.cake_outlined,      title: 'Freshly Baked\nDaily')),
-        Expanded(child: _BenefitItem(icon: Icons.favorite_border,    title: 'Made With\nLove')),
+        Expanded(child: _BenefitItem(icon: Icons.eco_outlined,       title: 'Bahan\nBerkualitas')),
+        Expanded(child: _BenefitItem(icon: Icons.cake_outlined,      title: 'Dipanggang\nSetiap Hari')),
+        Expanded(child: _BenefitItem(icon: Icons.favorite_border,    title: 'Dibuat dengan\nCinta')),
       ],
     );
   }
@@ -342,7 +394,7 @@ class _SearchBar extends StatelessWidget {
           children: [
             const Icon(Icons.search, color: AppTheme.primaryPink, size: 20),
             const SizedBox(width: 10),
-            Text('Search cake recipes...',
+            Text('Cari resep kue lezat...',
                 style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.medBrown)),
           ],
         ),

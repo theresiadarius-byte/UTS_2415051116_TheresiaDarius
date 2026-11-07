@@ -46,9 +46,9 @@ class StateView extends StatelessWidget {
             color: AppTheme.primaryPink,
             strokeWidth: 3,
           ),
-          SizedBox(height: 16),
-          Text(
-            'Loading...',
+          const SizedBox(height: 16),
+          const Text(
+            'Memuat...',
             style: TextStyle(
               color: AppTheme.medBrown, fontSize: 13,
             ),
@@ -61,14 +61,15 @@ class StateView extends StatelessWidget {
   // ── Error ─────────────────────────────────────────────────────────────────
   Widget _buildError() {
     // Bersihkan prefix "Exception: " yang mungkin ikut ke pesan
-    final cleanMsg = (message ?? 'Something went wrong')
+    final cleanMsg = (message ?? 'Terjadi kesalahan sistem')
         .replaceAll('Exception: ', '')
         .trim();
 
     // Klasifikasikan jenis error untuk ikon yang tepat
     final isNetwork = cleanMsg.toLowerCase().contains('internet') ||
         cleanMsg.toLowerCase().contains('network') ||
-        cleanMsg.toLowerCase().contains('connection');
+        cleanMsg.toLowerCase().contains('connection') ||
+        cleanMsg.toLowerCase().contains('koneksi');
 
     return Center(
       child: Padding(
@@ -93,7 +94,7 @@ class StateView extends StatelessWidget {
 
             // Judul error
             Text(
-              isNetwork ? 'No Connection' : 'Oops!',
+              isNetwork ? 'Tidak Ada Koneksi' : 'Ups!',
               style: GoogleFonts.playfairDisplay(
                 fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
               ),
@@ -115,7 +116,7 @@ class StateView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Try Again'),
+                label: const Text('Coba Lagi'),
               ),
             ],
           ],
@@ -126,7 +127,7 @@ class StateView extends StatelessWidget {
 
   // ── Empty ─────────────────────────────────────────────────────────────────
   Widget _buildEmpty() {
-    final msg = message ?? 'Nothing here yet';
+    final msg = message ?? 'Belum ada data di sini';
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),

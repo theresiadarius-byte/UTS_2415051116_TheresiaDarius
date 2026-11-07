@@ -94,7 +94,7 @@ class CommentCard extends StatelessWidget {
                     color: AppTheme.medBrown,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    tooltip: 'Edit comment',
+                    tooltip: 'Edit komentar',
                     onPressed: onEdit,
                   ),
                 if (onDelete != null)
@@ -103,7 +103,7 @@ class CommentCard extends StatelessWidget {
                     color: Colors.redAccent,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    tooltip: 'Delete comment',
+                    tooltip: 'Hapus komentar',
                     onPressed: onDelete,
                   ),
               ],
@@ -126,8 +126,8 @@ class CommentCard extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
     ];
     final m   = months[dt.month - 1];
     final h   = dt.hour.toString().padLeft(2, '0');

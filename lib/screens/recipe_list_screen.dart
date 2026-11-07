@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/meal_provider.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/recipe_translator.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/state_view.dart';
 import 'recipe_detail_screen.dart';
@@ -14,7 +15,14 @@ import 'recipe_detail_screen.dart';
 /// RecipeListScreen – daftar resep dengan grid responsif.
 /// Fitur: pencarian debounce, pull-to-refresh, dan SnackBar error.
 class RecipeListScreen extends StatefulWidget {
-  const RecipeListScreen({super.key});
+  final bool showBackButton;
+  final String? categoryTitle;
+
+  const RecipeListScreen({
+    super.key,
+    this.showBackButton = false,
+    this.categoryTitle,
+  });
 
   @override
   State<RecipeListScreen> createState() => _RecipeListScreenState();
@@ -46,7 +54,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Recipes refreshed!'),
+          content: const Text('Resep berhasil dimuat ulang!'),
           backgroundColor: AppTheme.primaryPink,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -56,31 +64,57 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     }
   }
 
+  static const _filterCategories = [
+    {'key': 'all',      'label': 'Semua Kue'},
+    {'key': 'cakes',    'label': 'Cake & Bolu'},
+    {'key': 'tarts',    'label': 'Pai & Tart'},
+    {'key': 'puddings', 'label': 'Puding & Mousse'},
+    {'key': 'cookies',  'label': 'Kukis & Roti'},
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.warmCream,
       appBar: AppBar(
-        title: Text(
-          'Cake Recipes',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
-          ),
+        title: Consumer<MealProvider>(
+          builder: (_, provider, __) {
+            final categoryName = switch (provider.activeCategory) {
+              'cakes'    => 'Aneka Cake & Bolu',
+              'tarts'    => 'Pai & Tart Manis',
+              'puddings' => 'Puding & Mousse',
+              'cookies'  => 'Kukis & Roti Manis',
+              _          => widget.categoryTitle ?? 'Daftar Resep Kue',
+            };
+            return Text(
+              categoryName,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
+              ),
+            );
+          },
         ),
         centerTitle: false,
         automaticallyImplyLeading: false,
+        leading: (widget.showBackButton || Navigator.canPop(context))
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.darkBrown),
+                tooltip: 'Kembali',
+                onPressed: () => Navigator.maybePop(context),
+              )
+            : null,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Search bar ─────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search cake recipes...',
+                hintText: 'Cari resep kue...',
                 prefixIcon: const Icon(Icons.search, color: AppTheme.primaryPink),
                 suffixIcon: AnimatedOpacity(
                   opacity: _searchController.text.isNotEmpty ? 1.0 : 0.0,
@@ -99,6 +133,47 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             ),
           ),
 
+          // ── Kategori Filter Chips ──────────────────────────────────────
+          Consumer<MealProvider>(
+            builder: (context, provider, _) {
+              return SizedBox(
+                height: 38,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _filterCategories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final cat = _filterCategories[i];
+                    final isSelected = provider.activeCategory == cat['key'];
+                    return ChoiceChip(
+                      showCheckmark: false,
+                      label: Text(cat['label']!),
+                      selected: isSelected,
+                      selectedColor: AppTheme.primaryPink,
+                      backgroundColor: const Color(0xFFF9EEF2),
+                      labelStyle: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? Colors.white : AppTheme.darkBrown,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected ? AppTheme.primaryPink : Colors.transparent,
+                        ),
+                      ),
+                      onSelected: (_) {
+                        _searchController.clear();
+                        provider.filterByCategory(cat['key']!);
+                      },
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+
           // ── Info jumlah + hint pull-to-refresh ────────────────────────
           Consumer<MealProvider>(
             builder: (_, provider, __) {
@@ -111,8 +186,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                     if (provider.listStatus == ProviderStatus.loaded)
                       Text(
                         isSearch
-                            ? '$count result${count == 1 ? '' : 's'} found'
-                            : '$count recipes',
+                            ? '$count resep ditemukan'
+                            : '$count resep kue',
                         style: GoogleFonts.poppins(
                           fontSize: 12, color: AppTheme.medBrown,
                         ),
@@ -124,7 +199,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                           const Icon(Icons.swipe_down_outlined, size: 13, color: AppTheme.medBrown),
                           const SizedBox(width: 4),
                           Text(
-                            'Pull to refresh',
+                            'Tarik untuk muat ulang',
                             style: GoogleFonts.poppins(fontSize: 11, color: AppTheme.medBrown),
                           ),
                         ],
@@ -152,7 +227,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                   ProviderStatus.loaded => provider.meals.isEmpty
                       ? const StateView(
                           status: ViewStatus.empty,
-                          message: 'No cake recipes found\nTry a different search term',
+                          message: 'Resep kue tidak ditemukan\nCoba kata kunci pencarian lainnya',
                         )
                       : _buildResponsiveGrid(context, provider),
 
@@ -195,7 +270,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                 mealId:    meal.id,
                 mealName:  meal.name,
                 mealThumb: meal.thumbnail,
-                category:  meal.category ?? 'Dessert',
+                category:  RecipeTranslator.translateCategory(meal.category),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(

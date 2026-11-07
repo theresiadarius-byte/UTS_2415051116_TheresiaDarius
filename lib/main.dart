@@ -59,7 +59,7 @@ class SweetBlissApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Sweet Bliss – Cake & Bakery Catalog',
+        title: 'Sweet Bliss – Katalog Kue & Roti',
         theme: AppTheme.theme,
         home: const MainScreen(),
       ),

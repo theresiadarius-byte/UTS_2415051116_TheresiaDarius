@@ -11,7 +11,12 @@ import 'recipe_detail_screen.dart';
 
 /// FavoriteScreen – daftar resep favorit dengan pull-to-refresh.
 class FavoriteScreen extends StatelessWidget {
-  const FavoriteScreen({super.key});
+  final bool showBackButton;
+
+  const FavoriteScreen({
+    super.key,
+    this.showBackButton = false,
+  });
 
   Future<void> _onRefresh(BuildContext context) async {
     await context
@@ -20,7 +25,7 @@ class FavoriteScreen extends StatelessWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Favorites refreshed!'),
+          content: const Text('Favorit berhasil dimuat ulang!'),
           backgroundColor: AppTheme.primaryPink,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -36,13 +41,20 @@ class FavoriteScreen extends StatelessWidget {
       backgroundColor: AppTheme.warmCream,
       appBar: AppBar(
         title: Text(
-          'My Favorites',
+          'Favorit Saya',
           style: GoogleFonts.playfairDisplay(
             fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
           ),
         ),
         centerTitle: false,
         automaticallyImplyLeading: false,
+        leading: (showBackButton || Navigator.canPop(context))
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.darkBrown),
+                tooltip: 'Kembali',
+                onPressed: () => Navigator.maybePop(context),
+              )
+            : null,
       ),
       body: Consumer<FavoriteProvider>(
         builder: (context, provider, _) {
@@ -74,14 +86,14 @@ class FavoriteScreen extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${provider.favorites.length} saved recipe${provider.favorites.length == 1 ? '' : 's'}',
+                      '${provider.favorites.length} resep disimpan',
                       style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.medBrown),
                     ),
                     const Spacer(),
                     const Icon(Icons.swipe_down_outlined, size: 13, color: AppTheme.medBrown),
                     const SizedBox(width: 4),
                     Text(
-                      'Pull to refresh',
+                      'Tarik untuk muat ulang',
                       style: GoogleFonts.poppins(fontSize: 11, color: AppTheme.medBrown),
                     ),
                   ],
@@ -154,14 +166,14 @@ class FavoriteScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'No Favorites Yet',
+                  'Belum Ada Favorit',
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.darkBrown,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Tap the ♥ button on any recipe\nto save it here.',
+                  'Ketuk tombol ♥ pada resep apa saja\nuntuk menyimpannya di sini.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13, color: AppTheme.medBrown, height: 1.5,

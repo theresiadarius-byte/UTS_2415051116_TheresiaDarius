@@ -21,13 +21,23 @@ class MealProvider extends ChangeNotifier {
 
   // ── State: Daftar Resep (RecipeListScreen + HomeScreen featured) ──────────
   List<Meal> _allDesserts = []; // cache semua dessert (tidak berubah saat search)
-  List<Meal> _meals = [];      // resep yang tampil saat ini (bisa hasil search)
+  List<Meal> _meals = [];      // resep yang tampil saat ini (bisa hasil search/filter)
   ProviderStatus _listStatus = ProviderStatus.idle;
   String _listError = '';
+  String _activeCategory = 'all'; // kategori yang sedang aktif
 
   List<Meal> get meals => _meals;
   ProviderStatus get listStatus => _listStatus;
   String get listError => _listError;
+  String get activeCategory => _activeCategory;
+
+  /// Kata kunci filter yang akurat sesuai koleksi resep di TheMealDB
+  static const Map<String, List<String>> categoryKeywords = {
+    'cakes': ['cake', 'gateau', 'sponge', 'torte'],
+    'tarts': ['tart', 'pie', 'crumble'],
+    'puddings': ['pudding', 'mousse', 'budyń', 'fudge', 'souffle', 'clafoutis', 'mess'],
+    'cookies': ['cookie', 'biscuit', 'bun', 'pancake', 'donut', 'doughnut', 'waffle', 'ghoriba', 'rogaliki', 'roll'],
+  };
 
   /// 6 resep pertama dari dessert cache – untuk tampilan featured di HomeScreen
   List<Meal> get featuredMeals => _allDesserts.take(6).toList();
@@ -57,7 +67,7 @@ class MealProvider extends ChangeNotifier {
     try {
       final meals = await _repository.getDesserts();
       _allDesserts = meals; // simpan cache
-      _meals = meals;       // tampilkan semua
+      _applyCurrentFilter(); // terapkan filter jika ada
       _listStatus = ProviderStatus.loaded;
     } catch (e) {
       _listError = e.toString().replaceAll('Exception: ', '');
@@ -67,15 +77,39 @@ class MealProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Filter resep berdasarkan kategori terpilih ('all', 'birthday', 'anniversary', 'theme', 'cupcake').
+  void filterByCategory(String categoryKey) {
+    _activeCategory = categoryKey;
+    _applyCurrentFilter();
+    _listStatus = ProviderStatus.loaded;
+    notifyListeners();
+  }
+
+  void _applyCurrentFilter() {
+    if (_activeCategory == 'all') {
+      _meals = List.from(_allDesserts);
+      return;
+    }
+
+    final keywords = categoryKeywords[_activeCategory] ?? [];
+    final filtered = _allDesserts.where((meal) {
+      final name = meal.name.toLowerCase();
+      return keywords.any((k) => name.contains(k));
+    }).toList();
+
+    // Jika ada hasil, gunakan hasil filter; jika sangat sedikit tetap tampilkan hasil filter
+    _meals = filtered.isNotEmpty ? filtered : List.from(_allDesserts);
+  }
+
   /// Cari resep berdasarkan query.
-  /// Jika query kosong → kembalikan semua dessert dari cache.
+  /// Jika query kosong → kembalikan sesuai kategori aktif.
   /// Jika ada query → panggil API search, filter hasil bertema kue.
   Future<void> searchMeals(String query) async {
     final trimmed = query.trim();
 
-    // Query kosong → reset ke cache semua dessert
+    // Query kosong → reset ke cache sesuai kategori aktif
     if (trimmed.isEmpty) {
-      _meals = List.from(_allDesserts);
+      _applyCurrentFilter();
       _listStatus = ProviderStatus.loaded;
       notifyListeners();
       return;

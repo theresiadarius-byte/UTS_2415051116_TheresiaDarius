@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/recipe_translator.dart';
 
 /// RecipeCard – kartu resep reusable untuk grid dan list horizontal.
 ///
@@ -82,7 +83,10 @@ class RecipeCard extends StatelessWidget {
                     // Label kategori
                     if (category != null)
                       Text(
-                        category!.toUpperCase(),
+                        (category!.contains('♥')
+                                ? category!
+                                : RecipeTranslator.translateCategory(category))
+                            .toUpperCase(),
                         style: GoogleFonts.poppins(
                           fontSize: 9, letterSpacing: 0.6,
                           color: AppTheme.primaryPink, fontWeight: FontWeight.w600,
